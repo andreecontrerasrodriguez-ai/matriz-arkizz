@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matriz de Adyacencia Arquitectónica Profesional</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <!-- html2canvas para exportación de alta calidad -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- jsPDF para exportación a PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .matrix-cell {
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .matrix-cell:hover {
+      background-color: rgba(245, 158, 11, 0.2);
+    }
+    
+    /* Efecto cuadrícula técnica de arquitectura */
+    .bg-arch-grid {
+      background-size: 20px 20px;
+      background-image: 
+        linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+    }
+    .dark .bg-arch-grid {
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body id="app-body" class="h-full flex flex-col font-sans antialiased bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200 selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- BARRA SUPERIOR TÉCNICA -->
+  <header class="border-b border-slate-300 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur px-5 py-2.5 flex items-center justify-between sticky top-0 z-50 transition-colors shadow-sm">
+    <div class="flex items-center space-x-3">
+      <div class="bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-950 p-2 rounded-lg font-bold text-xs flex items-center justify-center shadow-sm">
+        <i class="fa-solid fa-drafting-compass text-base"></i>
+      </div>
+      <div>
+        <h1 class="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2 uppercase">
+          <span data-i18n="app_title">Matriz de Adyacencia Arquitectónica</span>
+          <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono font-semibold px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700">v2.7 ARCH-CAD</span>
+        </h1>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium" data-i18n="app_subtitle">Programación Espacial y Diagramación Triangular de Relaciones</p>
+      </div>
+    </div>
+
+    <!-- ACCIONES Y CONTROLES -->
+    <div class="flex items-center space-x-2">
+      <!-- Selector de Idioma Dinámico -->
+      <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-300 dark:border-slate-700">
+        <button id="lang-es-btn" onclick="setLanguage('es')" class="text-[11px] font-bold px-2 py-1 rounded transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm">ES</button>
+        <button id="lang-en-btn" onclick="setLanguage('en')" class="text-[11px] font-semibold px-2 py-1 rounded text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">EN</button>
+      </div>
+
+      <div class="h-4 w-px bg-slate-300 dark:bg-slate-800 my-auto"></div>
+
+      <!-- Selector de Modo de Simbología -->
+      <div class="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-300 dark:border-slate-700">
+        <button id="mode-symbols-btn" onclick="setSymbolMode('symbols')" class="text-[11px] font-bold px-2.5 py-1 rounded transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-icons text-amber-500"></i> <span data-i18n="mode_symbols">Símbolos</span>
+        </button>
+        <button id="mode-numbers-btn" onclick="setSymbolMode('numbers')" class="text-[11px] font-semibold px-2.5 py-1 rounded text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5">
+          <i class="fa-solid fa-list-ol"></i> <span data-i18n="mode_numbers">Números</span>
+        </button>
+      </div>
+
+      <div class="h-4 w-px bg-slate-300 dark:bg-slate-800 my-auto"></div>
+
+      <!-- Conmutador Tema Claro / Oscuro -->
+      <button onclick="toggleTheme()" class="text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-2.5 py-1.5 rounded-lg font-medium transition flex items-center border border-slate-300 dark:border-slate-700">
+        <i id="theme-icon" class="fa-solid fa-sun mr-1.5 text-amber-500"></i>
+        <span id="theme-text" class="text-[11px] font-semibold">Modo Claro</span>
+      </button>
+
+      <button onclick="loadSampleData()" class="text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-2.5 py-1.5 rounded-lg font-medium transition flex items-center border border-slate-300 dark:border-slate-700">
+        <i class="fa-solid fa-folder-open mr-1.5 text-amber-500"></i> <span data-i18n="btn_sample">Ejemplo</span>
+      </button>
+
+      <button onclick="clearAllData()" class="text-xs bg-slate-100 hover:bg-rose-100 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-600 hover:text-rose-600 dark:text-slate-300 dark:hover:text-rose-300 px-2.5 py-1.5 rounded-lg font-medium transition flex items-center border border-slate-300 dark:border-slate-700">
+        <i class="fa-solid fa-trash-can mr-1.5 text-rose-500"></i> <span data-i18n="btn_clear">Limpiar</span>
+      </button>
+
+      <!-- Botones de Guardar / Cargar Estado -->
+      <div class="flex items-center space-x-1 border-l border-slate-300 dark:border-slate-700 pl-2">
+        <button onclick="exportJSON()" class="text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1.5 rounded-lg font-semibold transition flex items-center border border-slate-300 dark:border-slate-700" title="Guardar estado del proyecto">
+          <i class="fa-solid fa-floppy-disk mr-1"></i> <span data-i18n="btn_save">Guardar</span>
+        </button>
+
+        <label class="text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-1.5 rounded-lg font-semibold transition flex items-center border border-slate-300 dark:border-slate-700 cursor-pointer" title="Cargar proyecto previamente guardado">
+          <i class="fa-solid fa-folder-arrow-up mr-1"></i> <span data-i18n="btn_load">Cargar</span>
+          <input type="file" id="import-file-input" accept=".json" onchange="importJSON(event)" class="hidden" />
+        </label>
+      </div>
+
+      <!-- Exportación Imagen HD, Transparente y PDF -->
+      <div class="flex items-center space-x-1 border-l border-slate-300 dark:border-slate-700 pl-2">
+        <button onclick="exportHighResPNG(false)" class="text-xs bg-slate-900 hover:bg-black dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-slate-950 px-2.5 py-1.5 rounded-lg font-bold shadow-sm transition flex items-center" title="Exportar imagen PNG HD con fondo sólido">
+          <i class="fa-solid fa-image mr-1"></i> <span data-i18n="btn_export_png">Imagen HD</span>
+        </button>
+        <button onclick="exportHighResPNG(true)" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg font-bold shadow-sm transition flex items-center" title="Exportar imagen PNG con fondo transparente ideal para diapositivas">
+          <i class="fa-solid fa-ghost mr-1"></i> <span data-i18n="btn_export_transparent">Fondo Transparente</span>
+        </button>
+        <button onclick="exportPDF()" class="text-xs bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg font-bold shadow-sm transition flex items-center" title="Exportar reporte completo en formato PDF">
+          <i class="fa-solid fa-file-pdf mr-1"></i> <span data-i18n="btn_export_pdf">PDF HD</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 flex overflow-hidden">
+    
+    <aside class="w-80 border-r border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full overflow-hidden shrink-0 transition-colors">
+      
+      <!-- Pestañas -->
+      <div class="flex border-b border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+        <button id="tab-zones-btn" onclick="switchTab('zones')" class="flex-1 py-2.5 px-3 text-[11px] font-extrabold text-slate-900 dark:text-amber-400 border-b-2 border-slate-900 dark:border-amber-500 flex items-center justify-center gap-1.5 transition uppercase tracking-wider">
+          <i class="fa-solid fa-palette"></i> <span data-i18n="tab_areas">1. Áreas y Colores</span>
+        </button>
+        <button id="tab-rooms-btn" onclick="switchTab('rooms')" class="flex-1 py-2.5 px-3 text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center justify-center gap-1.5 transition uppercase tracking-wider">
+          <i class="fa-solid fa-list-check"></i> <span data-i18n="tab_rooms">2. Espacios</span>
+        </button>
+      </div>
+
+      <!-- SECCIÓN 1: ÁREAS Y CÍRCULO CROMÁTICO -->
+      <div id="tab-zones-content" class="flex-1 overflow-y-auto p-3.5 space-y-3.5">
+        <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-lg p-2.5 text-[11px] text-slate-600 dark:text-slate-300">
+          <p class="font-bold flex items-center gap-1.5 mb-0.5 text-slate-900 dark:text-amber-400">
+            <i class="fa-solid fa-eye-dropper"></i> <span data-i18n="info_zone_title">Pintado de Bloques de Área</span>
+          </p>
+          <span data-i18n="info_zone_desc">Elige colores del círculo cromático. La celda de la columna "ÁREA" se pintará completa de borde a borde.</span>
+        </div>
+
+        <!-- Agregar Área -->
+        <div class="bg-slate-50 dark:bg-slate-800/40 rounded-lg p-2.5 border border-slate-200 dark:border-slate-700/60">
+          <label class="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5" data-i18n="lbl_add_zone">Nueva Área</label>
+          <div class="flex gap-1.5">
+            <div class="relative flex-shrink-0">
+              <input type="color" id="new-zone-color" value="#facc15" class="w-8 h-8 rounded bg-transparent border border-slate-300 dark:border-slate-600 cursor-pointer p-0.5" title="Elegir color cromático" />
+            </div>
+            <input type="text" id="new-zone-name" placeholder="EJ. ZONA PRIVADA..." class="flex-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-amber-500 uppercase font-semibold" onkeydown="if(event.key==='Enter') addZone()" />
+            <button onclick="addZone()" class="bg-slate-900 dark:bg-amber-500 hover:bg-black dark:hover:bg-amber-400 text-white dark:text-slate-950 px-3 py-1 rounded text-xs font-bold transition flex items-center">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista de Áreas con Buscador -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-[10px] font-mono font-extrabold text-slate-400 uppercase tracking-wider" data-i18n="lbl_zones_list">Áreas Configuradas</h3>
+          </div>
+          <!-- Buscador de Zonas -->
+          <div class="relative mb-2">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
+              <i class="fa-solid fa-magnifying-glass text-[11px]"></i>
+            </span>
+            <input type="text" id="zone-search-input" oninput="filterZonesList()" placeholder="BUSCAR ÁREA..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-amber-500 uppercase font-semibold" />
+          </div>
+          <div id="zones-list" class="space-y-1.5"></div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 2: ESPACIOS / AMBIENTES -->
+      <div id="tab-rooms-content" class="flex-1 overflow-y-auto p-3.5 space-y-3.5 hidden">
+        <div class="bg-slate-50 dark:bg-slate-800/40 rounded-lg p-2.5 border border-slate-200 dark:border-slate-700/60">
+          <label class="block text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5" data-i18n="lbl_add_room">Nuevo Ambiente</label>
+          <div class="space-y-2">
+            <input type="text" id="new-room-name" placeholder="EJ. GERENCIA, RECEPCIÓN..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-amber-500 uppercase font-semibold" onkeydown="if(event.key==='Enter') addRoom()" />
+            <div class="flex gap-1.5">
+              <select id="new-room-zone" class="flex-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-slate-900 dark:focus:border-amber-500 font-semibold"></select>
+              <button onclick="addRoom()" class="bg-slate-900 dark:bg-amber-500 hover:bg-black dark:hover:bg-amber-400 text-white dark:text-slate-950 px-3 py-1 rounded text-xs font-bold transition flex items-center gap-1">
+                <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add">Agregar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ingreso Masivo -->
+        <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5">
+          <button onclick="toggleQuickInput()" class="w-full text-left flex justify-between items-center text-xs font-extrabold text-slate-700 dark:text-slate-300">
+            <span><i class="fa-solid fa-list-ol mr-1 text-amber-500"></i> <span data-i18n="lbl_bulk">Carga Masiva</span></span>
+            <i id="quick-input-arrow" class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+          </button>
+          <div id="quick-input-container" class="mt-2 space-y-2 hidden">
+            <textarea id="bulk-rooms-text" rows="4" placeholder="ADMINISTRACION&#10;GERENCIA&#10;CONTABILIDAD..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded p-2 text-xs text-slate-900 dark:text-slate-200 font-mono focus:outline-none focus:border-slate-900 uppercase"></textarea>
+            <button onclick="applyBulkRooms()" class="w-full bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs py-1 rounded font-bold transition" data-i18n="btn_load_bulk">Procesar Lista</button>
+          </div>
+        </div>
+
+        <!-- Lista de Espacios y Buscador en Tiempo Real -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-[10px] font-mono font-extrabold text-slate-400 uppercase tracking-wider"><span data-i18n="lbl_rooms_list">Ambientes</span> (<span id="rooms-count">0</span>)</h3>
+          </div>
+          <!-- Buscador de Ambientes -->
+          <div class="relative mb-2">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
+              <i class="fa-solid fa-magnifying-glass text-[11px]"></i>
+            </span>
+            <input type="text" id="room-search-input" oninput="filterRoomsList()" placeholder="BUSCAR AMBIENTE..." class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-slate-900 dark:focus:border-amber-500 uppercase font-semibold" />
+          </div>
+          <div id="rooms-list" class="space-y-1"></div>
+        </div>
+      </div>
+
+      <!-- Leyenda de Simbología -->
+      <div class="p-3 border-t border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 space-y-1.5 transition-colors">
+        <span class="text-[10px] font-mono font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider block" data-i18n="legend_title">Simbología Gráfica</span>
+        <div class="space-y-1 text-xs font-semibold text-slate-800 dark:text-slate-200">
+          <div class="flex items-center justify-between bg-white dark:bg-slate-950 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 bg-slate-900 dark:bg-white rounded-full inline-block"></span>
+              <span data-i18n="legend_primary">Adyacencia Primaria</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-mono">Val. 3</span>
+          </div>
+
+          <div class="flex items-center justify-between bg-white dark:bg-slate-950 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 border-2 border-slate-900 dark:border-white rounded-full inline-block bg-transparent"></span>
+              <span data-i18n="legend_secondary">Adyacencia Secundaria</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-mono">Val. 2</span>
+          </div>
+
+          <div class="flex items-center justify-between bg-white dark:bg-slate-950 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-0.5 bg-slate-900 dark:bg-white inline-block"></span>
+              <span data-i18n="legend_undesired">Adyacencia Indeseada</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-mono">Val. 1</span>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <section class="flex-1 bg-slate-200/60 dark:bg-slate-950 p-4 flex flex-col h-full overflow-hidden relative bg-arch-grid transition-colors">
+      
+      <!-- Panel de Interacción y Zoom -->
+      <div class="mb-3 flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-4 py-2 shadow-sm transition-colors shrink-0">
+        <div class="flex items-center space-x-2">
+          <span class="text-[11px] text-slate-400 font-mono font-bold uppercase" data-i18n="lbl_active_rel">Cruce:</span>
+          <div id="hover-info" class="text-xs font-bold text-slate-800 dark:text-amber-400 flex items-center gap-2">
+            <span class="text-slate-400 dark:text-slate-500 font-normal italic text-[11px]" data-i18n="hover_placeholder">Pasa el cursor sobre un rombo para visualizar la relación exacta</span>
+          </div>
+        </div>
+
+        <!-- Controles de Zoom -->
+        <div class="flex items-center space-x-2">
+          <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-300 dark:border-slate-700">
+            <button onclick="zoomOut()" title="Alejar Zoom" class="w-7 h-7 flex items-center justify-center text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded transition"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+            <span id="zoom-level-text" class="px-2 text-[11px] font-mono font-semibold text-slate-600 dark:text-slate-300">100%</span>
+            <button onclick="zoomIn()" title="Acercar Zoom" class="w-7 h-7 flex items-center justify-center text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded transition"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+            <button onclick="resetZoom()" title="Restablecer Zoom" class="px-2 py-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded transition">Reset</button>
+          </div>
+          <div class="h-4 w-px bg-slate-300 dark:bg-slate-800 my-auto"></div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
+            <i class="fa-solid fa-computer-mouse text-amber-500"></i>
+            <span data-i18n="click_hint">Clic para alternar valores</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lienzo Principal de la Matriz Triangular con Scroll Completo Bidireccional y Zoom -->
+      <div id="matrix-container" class="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-6 relative shadow-sm overflow-auto flex items-start justify-start cursor-grab active:cursor-grabbing">
+        <div id="matrix-wrapper" class="transition-transform duration-150 origin-top-left m-auto"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    const i18n = {
+      es: {
+        app_title: "Matriz de Adyacencia Arquitectónica",
+        app_subtitle: "Programación Espacial y Diagramación Triangular de Relaciones",
+        mode_symbols: "Símbolos",
+        mode_numbers: "Números",
+        btn_sample: "Ejemplo",
+        btn_clear: "Limpiar",
+        btn_save: "Guardar",
+        btn_load: "Cargar",
+        btn_export_png: "Imagen HD",
+        btn_export_transparent: "Fondo Transparente",
+        btn_export_pdf: "PDF HD",
+        tab_areas: "1. Áreas y Colores",
+        tab_rooms: "2. Espacios",
+        info_zone_title: "Pintado de Bloques de Área",
+        info_zone_desc: "Elige colores del círculo cromático. La celda de la columna \"ÁREA\" se pintará completa de borde a borde.",
+        lbl_add_zone: "Nueva Área",
+        lbl_zones_list: "Áreas Configuradas",
+        lbl_add_room: "Nuevo Ambiente",
+        lbl_rooms_list: "Ambientes",
+        btn_add: "Agregar",
+        lbl_bulk: "Carga Masiva",
+        btn_load_bulk: "Procesar Lista",
+        legend_title: "Simbología Gráfica",
+        legend_primary: "Adyacencia Primaria",
+        legend_secondary: "Adyacencia Secundaria",
+        legend_undesired: "Adyacencia Indeseada",
+        lbl_active_rel: "Cruce:",
+        hover_placeholder: "Pasa el cursor sobre un rombo para visualizar la relación exacta",
+        click_hint: "Clic para alternar valores de adyacencia",
+        area_col_title: "ÁREA",
+        space_col_title: "ESPACIOS (AMBIENTES)",
+        empty_state_title: "Agrega ambientes para generar el diagrama",
+        empty_state_desc: "Usa el panel lateral para definir las zonas y la lista de espacios.",
+        no_adj: "Sin Adyacencia"
+      },
+      en: {
+        app_title: "Architectural Adjacency Matrix",
+        app_subtitle: "Spatial Programming & Triangular Relationship Diagramming",
+        mode_symbols: "Symbols",
+        mode_numbers: "Numbers",
+        btn_sample: "Sample",
+        btn_clear: "Clear All",
+        btn_save: "Save",
+        btn_load: "Load",
+        btn_export_png: "HD Image",
+        btn_export_transparent: "Transparent BG",
+        btn_export_pdf: "HD PDF",
+        tab_areas: "1. Areas & Colors",
+        tab_rooms: "2. Spaces",
+        info_zone_title: "Area Block Fill",
+        info_zone_desc: "Select colors via color wheel. The whole 'AREA' block will be filled edge-to-edge.",
+        lbl_add_zone: "New Area",
+        lbl_zones_list: "Configured Areas",
+        lbl_add_room: "New Space",
+        lbl_rooms_list: "Spaces",
+        btn_add: "Add Space",
+        lbl_bulk: "Bulk Input",
+        btn_load_bulk: "Process List",
+        legend_title: "Graphic Legend",
+        legend_primary: "Primary Adjacency",
+        legend_secondary: "Secondary Adjacency",
+        legend_undesired: "Undesired Adjacency",
+        lbl_active_rel: "Intersection:",
+        hover_placeholder: "Hover over a cell to display relationship details",
+        click_hint: "Click cell to toggle adjacency values",
+        area_col_title: "AREA",
+        space_col_title: "SPACES / ROOMS",
+        empty_state_title: "Add spaces to generate the diagram",
+        empty_state_desc: "Use the side panel to set up functional areas and space lists.",
+        no_adj: "No Adjacency"
+      }
+    };
+
+    let currentLang = 'es';
+    let isDarkMode = false;
+    let symbolDisplayMode = 'symbols';
+    let currentZoom = 1.0;
+
+    let zones = [
+      { id: 'z1', name: 'ADMINISTRACION', color: '#facc15' },
+      { id: 'z2', name: 'PRIVADA', color: '#ef4444' },
+      { id: 'z3', name: 'PUBLICA', color: '#22c55e' },
+      { id: 'z4', name: 'SERVICIO', color: '#3b82f6' }
+    ];
+
+    let rooms = [
+      { id: 'r1', name: 'ADMINISTRACION', zoneId: 'z1' },
+      { id: 'r2', name: 'GERENTE', zoneId: 'z1' },
+      { id: 'r3', name: 'SUBGERENTE', zoneId: 'z1' },
+      { id: 'r4', name: 'CONTABILIDAD', zoneId: 'z1' },
+      { id: 'r5', name: 'SANITARIOS HOMBRES', zoneId: 'z1' },
+      { id: 'r6', name: 'SANITARIOS MUJERES', zoneId: 'z1' },
+      { id: 'r7', name: 'OFICINA SEGURIDAD', zoneId: 'z2' },
+      { id: 'r8', name: 'CUARTO DE MANTENIMIENTO', zoneId: 'z2' },
+      { id: 'r9', name: 'CUARTO ELECTRICO', zoneId: 'z2' },
+      { id: 'r10', name: 'COMEDOR DE EMPLEADOS', zoneId: 'z2' },
+      { id: 'r11', name: 'AREA DESCANSO', zoneId: 'z2' },
+      { id: 'r12', name: 'BODEGAS', zoneId: 'z2' },
+      { id: 'r13', name: 'SALON FAMILIAR', zoneId: 'z3' },
+      { id: 'r14', name: 'SALON ORQUESTA VERSATIL', zoneId: 'z3' },
+      { id: 'r15', name: 'SALON EXHIVICION', zoneId: 'z3' },
+      { id: 'r16', name: 'SALON CONFERENCIAS', zoneId: 'z3' },
+      { id: 'r17', name: 'AUDITORIO', zoneId: 'z3' },
+      { id: 'r18', name: 'TAQUILLA', zoneId: 'z4' },
+      { id: 'r19', name: 'RECEPCION', zoneId: 'z4' },
+      { id: 'r20', name: 'GUARDA ROPA', zoneId: 'z4' }
+    ];
+
+    function getSortedRooms() {
+      const zoneOrder = {};
+      zones.forEach((z, idx) => {
+        zoneOrder[z.id] = idx;
+      });
+
+      return [...rooms].sort((a, b) => {
+        const orderA = zoneOrder[a.zoneId] !== undefined ? zoneOrder[a.zoneId] : 999;
+        const orderB = zoneOrder[b.zoneId] !== undefined ? zoneOrder[b.zoneId] : 999;
+        return orderA - orderB;
+      });
+    }
+
+    let adjacencies = {
+      'r1-r2': '3', 'r2-r3': '3', 'r3-r4': '2', 'r4-r5': '2', 'r5-r6': '2',
+      'r1-r3': '2', 'r2-r4': '2', 'r7-r8': '3', 'r8-r9': '3', 'r10-r11': '3',
+      'r13-r14': '1', 'r14-r15': '1', 'r15-r16': '3', 'r16-r17': '3',
+      'r18-r19': '3', 'r19-r20': '2'
+    };
+
+    let activeHoverCell = null;
+
+    window.onload = function() {
+      detectBrowserLanguage();
+      renderZonesList();
+      renderZoneSelectOptions();
+      renderRoomsList();
+      renderTriangularMatrix();
+      window.addEventListener('resize', renderTriangularMatrix);
+
+      // Habilitar desplazamiento con arrastre (drag-to-scroll) en el contenedor de la matriz
+      const container = document.getElementById('matrix-container');
+      let isDown = false;
+      let startX, startY, scrollLeft, scrollTop;
+
+      container.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+        isDown = true;
+        container.style.cursor = 'grabbing';
+        startX = e.pageX - container.offsetLeft;
+        startY = e.pageY - container.offsetTop;
+        scrollLeft = container.scrollLeft;
+        scrollTop = container.scrollTop;
+      });
+
+      container.addEventListener('mouseleave', () => {
+        isDown = false;
+        container.style.cursor = 'grab';
+      });
+
+      container.addEventListener('mouseup', () => {
+        isDown = false;
+        container.style.cursor = 'grab';
+      });
+
+      container.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - container.offsetLeft;
+        const y = e.pageY - container.offsetTop;
+        const walkX = (x - startX) * 1.5;
+        const walkY = (y - startY) * 1.5;
+        container.scrollLeft = scrollLeft - walkX;
+        container.scrollTop = scrollTop - walkY;
+      });
+    };
+
+    function detectBrowserLanguage() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const langParam = urlParams.get('lang');
+      if (langParam && (langParam === 'es' || langParam === 'en')) {
+        setLanguage(langParam);
+        return;
+      }
+      const userLang = navigator.language || navigator.userLanguage;
+      if (userLang && userLang.startsWith('en')) {
+        setLanguage('en');
+      } else {
+        setLanguage('es');
+      }
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      const esBtn = document.getElementById('lang-es-btn');
+      const enBtn = document.getElementById('lang-en-btn');
+
+      if (lang === 'es') {
+        esBtn.className = "text-[11px] font-bold px-2 py-1 rounded transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm";
+        enBtn.className = "text-[11px] font-semibold px-2 py-1 rounded text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition";
+      } else {
+        enBtn.className = "text-[11px] font-bold px-2 py-1 rounded transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm";
+        esBtn.className = "text-[11px] font-semibold px-2 py-1 rounded text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition";
+      }
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[lang][key]) {
+          el.innerText = i18n[lang][key];
+        }
+      });
+
+      renderTriangularMatrix();
+    }
+
+    function toggleTheme() {
+      isDarkMode = !isDarkMode;
+      const html = document.documentElement;
+      const icon = document.getElementById('theme-icon');
+      const text = document.getElementById('theme-text');
+
+      if (isDarkMode) {
+        html.classList.add('dark');
+        icon.className = 'fa-solid fa-moon mr-1.5 text-amber-400';
+        text.innerText = 'Modo Oscuro';
+      } else {
+        html.classList.remove('dark');
+        icon.className = 'fa-solid fa-sun mr-1.5 text-amber-500';
+        text.innerText = 'Modo Claro';
+      }
+
+      renderTriangularMatrix();
+    }
+
+    function setSymbolMode(mode) {
+      symbolDisplayMode = mode;
+      const symBtn = document.getElementById('mode-symbols-btn');
+      const numBtn = document.getElementById('mode-numbers-btn');
+
+      if (mode === 'symbols') {
+        symBtn.className = "text-[11px] font-bold px-2.5 py-1 rounded transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm flex items-center gap-1.5";
+        numBtn.className = "text-[11px] font-semibold px-2.5 py-1 rounded text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5";
+      } else {
+        numBtn.className = "text-[11px] font-bold px-2.5 py-1 rounded transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm flex items-center gap-1.5";
+        symBtn.className = "text-[11px] font-semibold px-2.5 py-1 rounded text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5";
+      }
+
+      renderTriangularMatrix();
+    }
+
+    function switchTab(tab) {
+      const zonesBtn = document.getElementById('tab-zones-btn');
+      const roomsBtn = document.getElementById('tab-rooms-btn');
+      const zonesContent = document.getElementById('tab-zones-content');
+      const roomsContent = document.getElementById('tab-rooms-content');
+
+      if (tab === 'zones') {
+        zonesBtn.classList.add('text-slate-900', 'dark:text-amber-400', 'border-b-2', 'border-slate-900', 'dark:border-amber-500');
+        zonesBtn.classList.remove('text-slate-500');
+        roomsBtn.classList.remove('text-slate-900', 'dark:text-amber-400', 'border-b-2', 'border-slate-900', 'dark:border-amber-500');
+        roomsBtn.classList.add('text-slate-500');
+        zonesContent.classList.remove('hidden');
+        roomsContent.classList.add('hidden');
+      } else {
+        roomsBtn.classList.add('text-slate-900', 'dark:text-amber-400', 'border-b-2', 'border-slate-900', 'dark:border-amber-500');
+        roomsBtn.classList.remove('text-slate-500');
+        zonesBtn.classList.remove('text-slate-900', 'dark:text-amber-400', 'border-b-2', 'border-slate-900', 'dark:border-amber-500');
+        zonesBtn.classList.add('text-slate-500');
+        roomsContent.classList.remove('hidden');
+        zonesContent.classList.add('hidden');
+      }
+    }
+
+    function toggleQuickInput() {
+      const container = document.getElementById('quick-input-container');
+      const arrow = document.getElementById('quick-input-arrow');
+      container.classList.toggle('hidden');
+      arrow.classList.toggle('rotate-180');
+    }
+
+    // Funciones de Zoom
+    function zoomIn() {
+      currentZoom = Math.min(currentZoom + 0.15, 2.5);
+      updateZoomTransform();
+    }
+
+    function zoomOut() {
+      currentZoom = Math.max(currentZoom - 0.15, 0.4);
+      updateZoomTransform();
+    }
+
+    function resetZoom() {
+      currentZoom = 1.0;
+      updateZoomTransform();
+    }
+
+    function updateZoomTransform() {
+      const wrapper = document.getElementById('matrix-wrapper');
+      wrapper.style.transform = `scale(${currentZoom})`;
+      document.getElementById('zoom-level-text').innerText = Math.round(currentZoom * 100) + '%';
+    }
+
+    function addZone() {
+      const nameInput = document.getElementById('new-zone-name');
+      const colorInput = document.getElementById('new-zone-color');
+      const name = nameInput.value.trim().toUpperCase();
+      const color = colorInput.value;
+
+      if (!name) return;
+
+      const id = 'z_' + Date.now();
+      zones.push({ id, name, color });
+      nameInput.value = '';
+
+      renderZonesList();
+      renderZoneSelectOptions();
+      renderRoomsList();
+      renderTriangularMatrix();
+    }
+
+    function updateZoneColor(zoneId, newColor) {
+      const zone = zones.find(z => z.id === zoneId);
+      if (zone) {
+        zone.color = newColor;
+        renderZonesList();
+        renderRoomsList();
+        renderTriangularMatrix();
+      }
+    }
+
+    function deleteZone(zoneId) {
+      if (zones.length <= 1) return;
+      zones = zones.filter(z => z.id !== zoneId);
+      rooms.forEach(r => {
+        if (r.zoneId === zoneId) r.zoneId = zones[0].id;
+      });
+
+      renderZonesList();
+      renderZoneSelectOptions();
+      renderRoomsList();
+      renderTriangularMatrix();
+    }
+
+    function filterZonesList() {
+      renderZonesList();
+    }
+
+    function renderZonesList() {
+      const container = document.getElementById('zones-list');
+      const searchInput = document.getElementById('zone-search-input');
+      const filterText = searchInput ? searchInput.value.trim().toUpperCase() : '';
+
+      const filteredZones = zones.filter(zone => {
+        if (!filterText) return true;
+        return zone.name.toUpperCase().includes(filterText);
+      });
+
+      if (filteredZones.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 text-center py-4 italic">No se encontraron áreas</div>`;
+        return;
+      }
+
+      container.innerHTML = filteredZones.map(zone => {
+        return `
+          <div class="flex items-center justify-between bg-white dark:bg-slate-950 p-2 rounded border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center space-x-2 flex-1 min-w-0">
+              <input type="color" value="${zone.color}" onchange="updateZoneColor('${zone.id}', this.value)" 
+                class="w-5 h-5 rounded bg-transparent border-0 cursor-pointer p-0 shrink-0" title="Rueda Cromática" />
+              <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100 truncate uppercase tracking-tight">${escapeHtml(zone.name)}</span>
+            </div>
+            <div class="flex items-center space-x-1">
+              <span class="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded font-mono">${getRoomsCountInZone(zone.id)} amb.</span>
+              <button onclick="deleteZone('${zone.id}')" class="text-slate-400 hover:text-rose-500 p-1 transition">
+                <i class="fa-solid fa-xmark text-xs"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getRoomsCountInZone(zoneId) {
+      return rooms.filter(r => r.zoneId === zoneId).length;
+    }
+
+    function renderZoneSelectOptions() {
+      const select = document.getElementById('new-room-zone');
+      select.innerHTML = zones.map(z => `<option value="${z.id}">${escapeHtml(z.name)}</option>`).join('');
+    }
+
+    function addRoom() {
+      const nameInput = document.getElementById('new-room-name');
+      const zoneSelect = document.getElementById('new-room-zone');
+      const name = nameInput.value.trim().toUpperCase();
+      const zoneId = zoneSelect.value || (zones[0] ? zones[0].id : '');
+
+      if (!name) return;
+
+      const id = 'r_' + Date.now();
+      rooms.push({ id, name, zoneId });
+      nameInput.value = '';
+
+      renderRoomsList();
+      renderTriangularMatrix();
+    }
+
+    function applyBulkRooms() {
+      const textarea = document.getElementById('bulk-rooms-text');
+      const lines = textarea.value.split('\n').map(l => l.trim().toUpperCase()).filter(l => l.length > 0);
+      if (lines.length === 0) return;
+
+      const defaultZoneId = zones[0] ? zones[0].id : 'z1';
+      lines.forEach((line, index) => {
+        rooms.push({
+          id: 'r_' + Date.now() + '_' + index,
+          name: line,
+          zoneId: defaultZoneId
+        });
+      });
+
+      textarea.value = '';
+      toggleQuickInput();
+      renderRoomsList();
+      renderTriangularMatrix();
+    }
+
+    function updateRoomZone(roomId, newZoneId) {
+      const room = rooms.find(r => r.id === roomId);
+      if (room) {
+        room.zoneId = newZoneId;
+        renderRoomsList();
+        renderTriangularMatrix();
+      }
+    }
+
+    function deleteRoom(roomId) {
+      rooms = rooms.filter(r => r.id !== roomId);
+      Object.keys(adjacencies).forEach(key => {
+        if (key.includes(roomId)) delete adjacencies[key];
+      });
+
+      renderRoomsList();
+      renderTriangularMatrix();
+    }
+
+    function filterRoomsList() {
+      renderRoomsList();
+    }
+
+    function renderRoomsList() {
+      const container = document.getElementById('rooms-list');
+      const searchInput = document.getElementById('room-search-input');
+      const filterText = searchInput ? searchInput.value.trim().toUpperCase() : '';
+
+      document.getElementById('rooms-count').innerText = rooms.length;
+
+      const sortedRooms = getSortedRooms();
+      const filteredRooms = sortedRooms.filter(room => {
+        if (!filterText) return true;
+        const roomZone = zones.find(z => z.id === room.zoneId);
+        const zoneName = roomZone ? roomZone.name.toUpperCase() : '';
+        return room.name.toUpperCase().includes(filterText) || zoneName.includes(filterText);
+      });
+
+      if (filteredRooms.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 text-center py-4 italic">No se encontraron ambientes</div>`;
+        return;
+      }
+
+      container.innerHTML = filteredRooms.map((room) => {
+        const roomZone = zones.find(z => z.id === room.zoneId) || { name: 'Sin Área', color: '#64748b' };
+        
+        return `
+          <div class="flex items-center justify-between bg-white dark:bg-slate-950 p-1.5 rounded border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center space-x-1.5 flex-1 min-w-0 mr-1">
+              <div class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${roomZone.color}"></div>
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate uppercase">${escapeHtml(room.name)}</span>
+            </div>
+
+            <div class="flex items-center space-x-1">
+              <select onchange="updateRoomZone('${room.id}', this.value)" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 rounded px-1 py-0.5 focus:outline-none max-w-[90px] truncate">
+                ${zones.map(z => `<option value="${z.id}" ${z.id === room.zoneId ? 'selected' : ''}>${escapeHtml(z.name)}</option>`).join('')}
+              </select>
+
+              <button onclick="deleteRoom('${room.id}')" class="text-slate-400 hover:text-rose-500 p-1 transition">
+                <i class="fa-solid fa-trash-can text-[11px]"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTriangularMatrix() {
+      const wrapper = document.getElementById('matrix-wrapper');
+
+      if (rooms.length < 2) {
+        wrapper.innerHTML = `
+          <div class="text-center py-12 px-6">
+            <i class="fa-solid fa-drafting-compass text-4xl text-slate-300 dark:text-slate-700 mb-2"></i>
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">${i18n[currentLang].empty_state_title}</h3>
+            <p class="text-[11px] text-slate-400 mt-1">${i18n[currentLang].empty_state_desc}</p>
+          </div>
+        `;
+        return;
+      }
+
+      const sortedRooms = getSortedRooms();
+      const N = sortedRooms.length;
+      const rowHeight = 28;       
+      const areaColWidth = 120;   
+      const roomColWidth = 220;   
+      const tableLeftWidth = areaColWidth + roomColWidth;
+
+      const step = rowHeight;
+      const totalWidth = tableLeftWidth + ((N - 1) * step) + 60;
+      const totalHeight = 28 + (N * rowHeight) + 60;
+
+      const gridBorder = isDarkMode ? '#475569' : '#000000';
+      const headerBg = isDarkMode ? '#0f172a' : '#f8fafc';
+      const headerText = isDarkMode ? '#94a3b8' : '#0f172a';
+      const cellBg = isDarkMode ? '#020617' : '#ffffff';
+      const cellHoverBg = isDarkMode ? '#1e293b' : '#f1f5f9';
+      const symbolColor = isDarkMode ? '#ffffff' : '#000000';
+
+      let areaBlocks = [];
+      let currentZoneId = null;
+      let startIdx = 0;
+
+      sortedRooms.forEach((r, idx) => {
+        if (r.zoneId !== currentZoneId) {
+          if (currentZoneId !== null) {
+            areaBlocks.push({ zoneId: currentZoneId, start: startIdx, count: idx - startIdx });
+          }
+          currentZoneId = r.zoneId;
+          startIdx = idx;
+        }
+      });
+      if (currentZoneId !== null) {
+        areaBlocks.push({ zoneId: currentZoneId, start: startIdx, count: N - startIdx });
+      }
+
+      let svg = `<svg viewBox="0 0 ${totalWidth} ${totalHeight}" width="${totalWidth}" height="${totalHeight}" class="font-sans select-none overflow-visible">`;
+
+      svg += `
+        <rect x="0" y="0" width="${areaColWidth}" height="28" fill="${headerBg}" stroke="${gridBorder}" stroke-width="1.5" />
+        <text x="${areaColWidth / 2}" y="18" text-anchor="middle" fill="${headerText}" font-size="10" font-weight="900" letter-spacing="0.5">${i18n[currentLang].area_col_title}</text>
+
+        <rect x="${areaColWidth}" y="0" width="${roomColWidth}" height="28" fill="${headerBg}" stroke="${gridBorder}" stroke-width="1.5" />
+        <text x="${areaColWidth + 10}" y="18" text-anchor="start" fill="${headerText}" font-size="10" font-weight="900" letter-spacing="0.5">${i18n[currentLang].space_col_title}</text>
+      `;
+
+      areaBlocks.forEach(block => {
+        const zone = zones.find(z => z.id === block.zoneId) || { name: 'ÁREA', color: '#64748b' };
+        const y = 28 + (block.start * rowHeight);
+        const height = block.count * rowHeight;
+        const textColor = getContrastColor(zone.color);
+
+        svg += `
+          <g>
+            <rect x="0" y="${y}" width="${areaColWidth}" height="${height}" fill="${zone.color}" stroke="${gridBorder}" stroke-width="1.5" />
+            <text x="${areaColWidth / 2}" y="${y + (height / 2) + 3.5}" text-anchor="middle" fill="${textColor}" font-size="10" font-weight="900" letter-spacing="0.5">${escapeHtml(zone.name)}</text>
+          </g>
+        `;
+      });
+
+      sortedRooms.forEach((room, i) => {
+        const y = 28 + (i * rowHeight);
+        const isHoveredRoom = activeHoverCell && (activeHoverCell.r1 === room.id || activeHoverCell.r2 === room.id);
+        const rowBg = isHoveredRoom ? (isDarkMode ? '#334155' : '#fde68a') : cellBg;
+        const rowTextColor = isHoveredRoom ? (isDarkMode ? '#fbbf24' : '#000000') : (isDarkMode ? '#f8fafc' : '#000000');
+        const rowFontWeight = isHoveredRoom ? '900' : '700';
+
+        svg += `
+          <g id="room-row-${room.id}">
+            <rect x="${areaColWidth}" y="${y}" width="${roomColWidth}" height="${rowHeight}" fill="${rowBg}" stroke="${gridBorder}" stroke-width="1" />
+            <text x="${areaColWidth + roomColWidth / 2}" y="${y + 18}" text-anchor="middle" fill="${rowTextColor}" font-size="10" font-weight="${rowFontWeight}">${escapeHtml(room.name)}</text>
+          </g>
+        `;
+      });
+
+      const halfStep = step / 2;
+
+      for (let i = 0; i < N - 1; i++) {
+        for (let j = i + 1; j < N; j++) {
+          const r1 = sortedRooms[i];
+          const r2 = sortedRooms[j];
+          const d = j - i;
+          
+          const cx = tableLeftWidth + (d * halfStep);
+          const cy = 28 + ((i + j + 1) / 2) * rowHeight;
+
+          const rx = halfStep;
+          const ry = halfStep;
+          const points = `${cx - rx},${cy} ${cx},${cy - ry} ${cx + rx},${cy} ${cx},${cy + ry}`;
+
+          const key1 = `${r1.id}-${r2.id}`;
+          const key2 = `${r2.id}-${r1.id}`;
+          const value = adjacencies[key1] || adjacencies[key2] || null;
+
+          const isCellHovered = activeHoverCell && 
+            ((activeHoverCell.r1 === r1.id && activeHoverCell.r2 === r2.id) ||
+             (activeHoverCell.r1 === r2.id && activeHoverCell.r2 === r1.id));
+
+          let diamondFill = cellBg;
+          if (isCellHovered) diamondFill = cellHoverBg;
+
+          let diamondStroke = gridBorder;
+          let strokeWidth = "1";
+
+          if (isCellHovered) {
+            diamondStroke = '#f59e0b';
+            strokeWidth = "2";
+          }
+
+          let contentSvg = '';
+
+          if (value) {
+            if (symbolDisplayMode === 'numbers') {
+              contentSvg = `<text x="${cx}" y="${cy + 3.5}" text-anchor="middle" fill="${symbolColor}" font-size="10" font-weight="900" pointer-events="none">${value}</text>`;
+            } else {
+              if (value === '3') {
+                contentSvg = `<circle cx="${cx}" cy="${cy}" r="4" fill="${symbolColor}" pointer-events="none" />`;
+              } else if (value === '2') {
+                contentSvg = `<circle cx="${cx}" cy="${cy}" r="4" fill="none" stroke="${symbolColor}" stroke-width="1.8" pointer-events="none" />`;
+              } else if (value === '1') {
+                contentSvg = `<line x1="${cx - 4.5}" y1="${cy}" x2="${cx + 4.5}" y2="${cy}" stroke="${symbolColor}" stroke-width="2" stroke-linecap="round" pointer-events="none" />`;
+              }
+            }
+          }
+
+          svg += `
+            <g class="matrix-cell" 
+               onclick="toggleAdjacency('${r1.id}', '${r2.id}')"
+               onmouseenter="setHoverInfo('${r1.id}', '${r2.id}', false)"
+               onmouseleave="clearHoverInfo()">
+              <polygon points="${points}" fill="${diamondFill}" stroke="${diamondStroke}" stroke-width="${strokeWidth}" />
+              ${contentSvg}
+            </g>
+          `;
+        }
+      }
+
+      svg += `</svg>`;
+      wrapper.innerHTML = svg;
+    }
+
+    function toggleAdjacency(r1, r2) {
+      const key1 = `${r1}-${r2}`;
+      const key2 = `${r2}-${r1}`;
+      const current = adjacencies[key1] || adjacencies[key2] || null;
+
+      let next = null;
+      if (!current) next = '3';
+      else if (current === '3') next = '2';
+      else if (current === '2') next = '1';
+      else if (current === '1') next = null;
+
+      if (next) {
+        adjacencies[key1] = next;
+        adjacencies[key2] = next;
+      } else {
+        delete adjacencies[key1];
+        delete adjacencies[key2];
+      }
+
+      setHoverInfo(r1, r2, true);
+    }
+
+    function setHoverInfo(r1, r2, shouldRenderMatrix = false) {
+      activeHoverCell = { r1, r2 };
+
+      const room1 = rooms.find(r => r.id === r1);
+      const room2 = rooms.find(r => r.id === r2);
+      const zone1 = zones.find(z => z.id === room1?.zoneId);
+      const zone2 = zones.find(z => z.id === room2?.zoneId);
+
+      const key = `${r1}-${r2}`;
+      const value = adjacencies[key] || adjacencies[`${r2}-${r1}`] || i18n[currentLang].no_adj;
+
+      let statusBadge = '';
+      if (value === '3') statusBadge = '<span class="bg-slate-900 text-white dark:bg-white dark:text-slate-950 px-2 py-0.5 rounded font-extrabold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-current"></span> ' + i18n[currentLang].legend_primary + ' (3)</span>';
+      else if (value === '2') statusBadge = '<span class="border border-slate-900 text-slate-900 dark:border-white dark:text-white px-2 py-0.5 rounded font-extrabold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full border border-current"></span> ' + i18n[currentLang].legend_secondary + ' (2)</span>';
+      else if (value === '1') statusBadge = '<span class="bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 px-2 py-0.5 rounded font-extrabold flex items-center gap-1.5"><span class="w-2.5 h-0.5 bg-current"></span> ' + i18n[currentLang].legend_undesired + ' (1)</span>';
+      else statusBadge = `<span class="text-slate-400 font-medium">${i18n[currentLang].no_adj}</span>`;
+
+      const infoContainer = document.getElementById('hover-info');
+      infoContainer.innerHTML = `
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="font-bold uppercase text-[11px] text-slate-900 dark:text-white bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-700">${escapeHtml(room1?.name || '')}</span>
+          <span class="text-[9px] px-1.5 py-0.5 rounded font-bold text-slate-950" style="background-color: ${zone1?.color}">${escapeHtml(zone1?.name || '')}</span>
+          <i class="fa-solid fa-arrows-left-right text-amber-500 text-[10px] mx-0.5"></i>
+          <span class="font-bold uppercase text-[11px] text-slate-900 dark:text-white bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-700">${escapeHtml(room2?.name || '')}</span>
+          <span class="text-[9px] px-1.5 py-0.5 rounded font-bold text-slate-950" style="background-color: ${zone2?.color}">${escapeHtml(zone2?.name || '')}</span>
+          <span class="ml-1 text-[11px]">${statusBadge}</span>
+        </div>
+      `;
+
+      if (shouldRenderMatrix) {
+        renderTriangularMatrix();
+      }
+    }
+
+    function clearHoverInfo() {
+      activeHoverCell = null;
+      document.getElementById('hover-info').innerHTML = `<span class="text-slate-400 dark:text-slate-500 font-normal italic text-[11px]">${i18n[currentLang].hover_placeholder}</span>`;
+      renderTriangularMatrix();
+    }
+
+    function getContrastColor(hexColor) {
+      if (!hexColor || hexColor.charAt(0) !== '#') return '#000000';
+      const r = parseInt(hexColor.substr(1, 2), 16);
+      const g = parseInt(hexColor.substr(3, 2), 16);
+      const b = parseInt(hexColor.substr(5, 2), 16);
+      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+      return (yiq >= 128) ? '#0f172a' : '#ffffff';
+    }
+
+    // Exportar Imagen de alta resolución centrada y completa (con opción de fondo transparente)
+    function exportHighResPNG(transparent = false) {
+      const wrapper = document.getElementById('matrix-wrapper');
+      
+      const prevZoom = currentZoom;
+      currentZoom = 1.0;
+      updateZoomTransform();
+
+      wrapper.style.padding = '80px';
+
+      const bgColor = transparent ? null : (isDarkMode ? '#0f172a' : '#ffffff');
+
+      html2canvas(wrapper, {
+        scale: 4,
+        useCORS: true,
+        backgroundColor: bgColor,
+        logging: false,
+        scrollX: 0,
+        scrollY: 0
+      }).then(canvas => {
+        wrapper.style.padding = '';
+        currentZoom = prevZoom;
+        updateZoomTransform();
+
+        const suffix = transparent ? 'transparente' : 'hd';
+        const link = document.createElement('a');
+        link.download = `matriz-adyacencia-${suffix}-${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }).catch(err => {
+        wrapper.style.padding = '';
+        currentZoom = prevZoom;
+        updateZoomTransform();
+        console.error('Error al exportar imagen:', err);
+      });
+    }
+
+    // Exportar PDF completo centrado
+    function exportPDF() {
+      const wrapper = document.getElementById('matrix-wrapper');
+      
+      const prevZoom = currentZoom;
+      currentZoom = 1.0;
+      updateZoomTransform();
+
+      wrapper.style.padding = '60px';
+
+      html2canvas(wrapper, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: isDarkMode ? '#0f172a' : '#ffffff',
+        logging: false
+      }).then(canvas => {
+        wrapper.style.padding = '';
+        currentZoom = prevZoom;
+        updateZoomTransform();
+
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const orientation = imgWidth > imgHeight ? 'landscape' : 'portrait';
+
+        const pdf = new jsPDF(orientation, 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const ratio = Math.min((pageWidth - 20) / imgWidth, (pageHeight - 20) / imgHeight);
+        const finalWidth = imgWidth * ratio;
+        const finalHeight = imgHeight * ratio;
+
+        const posX = (pageWidth - finalWidth) / 2;
+        const posY = (pageHeight - finalHeight) / 2;
+
+        pdf.addImage(imgData, 'PNG', posX, posY, finalWidth, finalHeight);
+        pdf.save(`matriz-adyacencia-reporte-${Date.now()}.pdf`);
+      }).catch(err => {
+        wrapper.style.padding = '';
+        currentZoom = prevZoom;
+        updateZoomTransform();
+        console.error('Error al exportar PDF:', err);
+      });
+    }
+
+    function loadSampleData() {
+      zones = [
+        { id: 'z1', name: 'ADMINISTRACION', color: '#facc15' },
+        { id: 'z2', name: 'PRIVADA', color: '#ef4444' },
+        { id: 'z3', name: 'PUBLICA', color: '#22c55e' },
+        { id: 'z4', name: 'SERVICIO', color: '#3b82f6' }
+      ];
+
+      rooms = [
+        { id: 'r1', name: 'ADMINISTRACION', zoneId: 'z1' },
+        { id: 'r2', name: 'GERENTE', zoneId: 'z1' },
+        { id: 'r3', name: 'SUBGERENTE', zoneId: 'z1' },
+        { id: 'r4', name: 'CONTABILIDAD', zoneId: 'z1' },
+        { id: 'r5', name: 'SANITARIOS HOMBRES', zoneId: 'z1' },
+        { id: 'r6', name: 'SANITARIOS MUJERES', zoneId: 'z1' },
+        { id: 'r7', name: 'OFICINA SEGURIDAD', zoneId: 'z2' },
+        { id: 'r8', name: 'CUARTO DE MANTENIMIENTO', zoneId: 'z2' },
+        { id: 'r9', name: 'CUARTO ELECTRICO', zoneId: 'z2' },
+        { id: 'r10', name: 'COMEDOR DE EMPLEADOS', zoneId: 'z2' },
+        { id: 'r11', name: 'AREA DESCANSO', zoneId: 'z2' },
+        { id: 'r12', name: 'BODEGAS', zoneId: 'z2' },
+        { id: 'r13', name: 'SALON FAMILIAR', zoneId: 'z3' },
+        { id: 'r14', name: 'SALON ORQUESTA VERSATIL', zoneId: 'z3' },
+        { id: 'r15', name: 'SALON EXHIVICION', zoneId: 'z3' },
+        { id: 'r16', name: 'SALON CONFERENCIAS', zoneId: 'z3' },
+        { id: 'r17', name: 'AUDITORIO', zoneId: 'z3' },
+        { id: 'r18', name: 'TAQUILLA', zoneId: 'z4' },
+        { id: 'r19', name: 'RECEPCION', zoneId: 'z4' },
+        { id: 'r20', name: 'GUARDA ROPA', zoneId: 'z4' }
+      ];
+
+      adjacencies = {
+        'r1-r2': '3', 'r2-r3': '3', 'r3-r4': '2', 'r4-r5': '2', 'r5-r6': '2',
+        'r1-r3': '2', 'r2-r4': '2', 'r7-r8': '3', 'r8-r9': '3', 'r10-r11': '3',
+        'r13-r14': '1', 'r14-r15': '1', 'r15-r16': '3', 'r16-r17': '3',
+        'r18-r19': '3', 'r19-r20': '2'
+      };
+
+      renderZonesList();
+      renderZoneSelectOptions();
+      renderRoomsList();
+      renderTriangularMatrix();
+    }
+
+    function clearAllData() {
+      zones = [{ id: 'z1', name: 'ÁREA GENERAL', color: '#facc15' }];
+      rooms = [];
+      adjacencies = {};
+      renderZonesList();
+      renderZoneSelectOptions();
+      renderRoomsList();
+      renderTriangularMatrix();
+    }
+
+    function exportJSON() {
+      const data = { zones, rooms, adjacencies };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `matriz-adyacencia-arch-${Date.now()}.json`;
+      a.click();
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const content = JSON.parse(e.target.result);
+          if (content.zones && content.rooms && content.adjacencies) {
+            zones = content.zones;
+            rooms = content.rooms;
+            adjacencies = content.adjacencies;
+            renderZonesList();
+            renderZoneSelectOptions();
+            renderRoomsList();
+            renderTriangularMatrix();
+          }
+        } catch(err) {
+          console.error("Error al importar el archivo JSON:", err);
+        }
+        event.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
